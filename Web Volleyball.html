@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Web Volleyball</title>
+<style>body{margin:0;height:100vh;display:grid;place-items:center;background:#1b1e4b;color:#fff;font:600 16px system-ui,sans-serif;text-align:center}
+.b{width:46px;height:46px;border-radius:50%;margin:0 auto 14px;background:conic-gradient(#ffc93c 0 33%,#2d6bff 0 66%,#fff 0);animation:s 1s linear infinite}@keyframes s{to{transform:rotate(360deg)}}small{opacity:.7}</style></head>
+<body><div><div class="b"></div><div id="m">Checking for updates…</div><small id="s"></small></div>
+<script>
+/* ===== Web Volleyball launcher =====
+   Keep THIS file on your laptop. Every time you open it, it downloads the newest game from GitHub,
+   so you never have to redownload. Your save stays on your laptop like before.
+   ONLY EDIT THIS LINE (the "Raw" link of web-volleyball.html in your GitHub repo): */
+const GAME_URL="https://raw.githubusercontent.com/YOUR-GITHUB-NAME/web-volleyball/main/web-volleyball.html";
+const CHECK_EVERY=3*60*1000; // while playing, check for a new version every 3 minutes
+
+const ver=h=>{const m=/GAME_VER="([^"]+)"/.exec(h||"");return m?m[1]:"?";};
+async function getLatest(){const r=await fetch(GAME_URL+"?t="+Date.now(),{cache:"no-store"});if(!r.ok)throw new Error("HTTP "+r.status);const h=await r.text();if(!h.includes("GAME_VER"))throw new Error("not the game");return h;}
+function launch(html,note){
+  try{localStorage.setItem("wvGameCache",html);}catch(e){} // offline copy for next time
+  const v=ver(html);
+  // tiny watcher added into the game: shows a banner when GitHub has a newer version
+  const watch=`<script>(function(){const U=${JSON.stringify(GAME_URL)},V=${JSON.stringify(v)};
+    setInterval(async()=>{try{if(document.hidden)return;const r=await fetch(U+"?t="+Date.now(),{cache:"no-store"});const h=await r.text();const m=/GAME_VER="([^"]+)"/.exec(h);
+      if(m&&m[1]!==V&&!document.getElementById("wvUpd")){try{localStorage.setItem("wvGameCache",h);}catch(e){}const d=document.createElement("div");d.id="wvUpd";
+        d.style.cssText="position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:9999;background:#ffc93c;color:#1b1e4b;font:800 15px system-ui;padding:10px 16px;border-radius:999px;box-shadow:0 6px 20px rgba(0,0,0,.35);cursor:pointer";
+        d.textContent="⬆️ Update "+m[1]+" is out! Tap to restart (your save is kept)";d.onclick=()=>{try{saveProf()}catch(e){}location.reload();};document.body.appendChild(d);}}catch(e){}},${CHECK_EVERY});})();<\/script>`;
+  html=html.replace(/<\/body>/i,watch+"</body>");
+  document.open();document.write(html);document.close();
+  if(note)setTimeout(()=>{try{toast(note)}catch(e){}},3500);
+}
+(async()=>{
+  try{const h=await getLatest();launch(h);}
+  catch(e){const c=(()=>{try{return localStorage.getItem("wvGameCache")}catch(x){return null}})();
+    if(c)launch(c,"📴 Couldn't reach GitHub, so you're playing your last downloaded version.");
+    else{document.getElementById("m").textContent="Couldn't download the game.";document.getElementById("s").textContent="Check your internet, or the GAME_URL link inside this file. ("+e.message+")";}}
+})();
+</script></body></html>
